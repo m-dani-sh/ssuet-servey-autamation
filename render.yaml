@@ -1,0 +1,21 @@
+services:
+  # 1. This hosts your Flask backend server
+  - type: web
+    name: ssuet-survey-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+  # 2. This hosts your HTML frontend page
+  - type: static
+    name: ssuet-survey-frontend
+    env: static
+    buildCommand: "" # Plain HTML doesn't need a build command
+    publishDir: "."  # Serves index.html from your root directory
+    routes:
+      - type: rewrite
+        src: /api/*
+        dest: https://ssuet-survey-backend.onrender.com/api/* # Points to your backend service
