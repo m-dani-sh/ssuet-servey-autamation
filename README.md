@@ -14,10 +14,10 @@ Automates university course evaluation surveys using Python (Flask) backend and 
 
 ## Setup
 ```bash
-git clone https://github.com/yourusername/survey-automation.git
-cd survey-automation
+git clone https://github.com/yourusername/ssuet-survey-automation.git
+cd ssuet-survey-automation
 pip install -r requirements.txt
-python backend/app.py
+python /app.py
 ```
 Open `http://localhost:5000`
 
