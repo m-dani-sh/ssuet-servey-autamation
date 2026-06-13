@@ -4,7 +4,7 @@ services:
     name: ssuet-survey-backend
     env: python
     buildCommand: ./render-build.sh
-    startCommand: export PATH="${PATH}:/opt/render/project/.render/chrome/opt/google/chrome" && python server.py
+    startCommand: export PATH="${PATH}:/opt/render/project/.render/chrome/opt/google/chrome" && python $HOME/project/src/server.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.10.0
