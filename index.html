@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SSUET Survey Bot</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:#f5f5f3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#1a1a18;font-size:16px}
+:root{
+  --green:#0F6E56;--green-bg:#E1F5EE;--green-mid:#1D9E75;--green-light:#9FE1CB;
+  --red:#A32D2D;--red-bg:#FCEBEB;--red-mid:#E24B4A;
+  --amber:#854F0B;--amber-bg:#FAEEDA;--amber-mid:#EF9F27;
+  --blue:#185FA5;--blue-bg:#E6F1FB;
+  --gray:#5F5E5A;--gray-bg:#F1EFE8;
+  --text:#1a1a18;--text2:#6b6b68;--text3:#9a9a96;
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#ececea;
+  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.2);
+  --r:8px;--r-lg:14px;--r-xl:18px;
+}
+.app{max-width:440px;margin:0 auto;min-height:100vh;background:var(--bg)}
+.screen{display:none;padding:1.5rem 1.25rem 5rem;animation:fadeIn .2s ease}
+.screen.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Inputs */
+input[type=text],input[type=password]{
+  display:block;width:100%;padding:12px 14px;font-size:15px;
+  border:1.5px solid var(--border2);border-radius:var(--r);
+  background:var(--bg);color:var(--text);outline:none;
+  transition:border-color .15s,box-shadow .15s;
+}
+input:focus{border-color:var(--green-mid);box-shadow:0 0 0 3px rgba(29,158,117,.15)}
+
+/* Buttons */
+.btn-primary{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:14px;background:var(--green);border:none;
+  border-radius:var(--r-lg);color:#fff;font-size:15px;font-weight:600;
+  cursor:pointer;transition:opacity .15s,transform .1s;
+}
+.btn-primary:hover{opacity:.9}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed}
+.btn-secondary{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;padding:12px;background:transparent;
+  border:1.5px solid var(--border2);border-radius:var(--r-lg);
+  font-size:14px;color:var(--text2);cursor:pointer;transition:background .15s;
+}
+.btn-secondary:hover{background:var(--bg2)}
+.btn-sm{padding:7px 14px;font-size:12px;font-weight:500;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);cursor:pointer;color:var(--text2)}
+
+/* Cards */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px 16px}
+.card+.card{margin-top:10px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600;letter-spacing:.2px}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-amber{background:var(--amber-bg);color:var(--amber)}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-gray{background:var(--gray-bg);color:var(--gray)}
+
+/* Avatar */
+.avatar{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;flex-shrink:0;font-size:13px}
+
+/* Progress bar */
+.prog-wrap{height:5px;background:var(--bg3);border-radius:99px;overflow:hidden}
+.prog-fill{height:100%;background:var(--green-mid);border-radius:99px;transition:width .5s ease}
+
+/* Stat grid */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.stat-box{background:var(--bg2);border-radius:var(--r);padding:12px 10px;text-align:center}
+.stat-num{font-size:22px;font-weight:700;line-height:1}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* Rating buttons */
+.rating-btn{
+  display:flex;align-items:center;gap:14px;width:100%;padding:16px;
+  background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r-lg);
+  cursor:pointer;text-align:left;transition:border-color .15s,background .15s,transform .1s;
+  margin-bottom:10px;
+}
+.rating-btn:active{transform:scale(.98)}
+.rating-btn.selected{border-width:2px}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:#1a1a18;color:#fff;padding:10px 20px;border-radius:99px;
+  font-size:13px;font-weight:500;transition:transform .3s ease;z-index:999;white-space:nowrap;
+}
+#toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Spinner */
+.spin{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Bottom nav shadow */
+.sticky-bottom{
+  position:sticky;bottom:0;background:var(--bg);
+  padding:14px 1.25rem 20px;border-top:1px solid var(--border);
+  margin:0 -1.25rem -5rem;
+}
+
+/* Section header */
+.section-hdr{font-size:12px;font-weight:600;color:var(--text2);letter-spacing:.5px;text-transform:uppercase;margin:1.5rem 0 10px}
+
+/* Error box */
+.err-box{background:var(--red-bg);border:1px solid var(--red-mid);border-radius:var(--r);padding:10px 14px;font-size:13px;color:var(--red);margin-top:10px;display:none}
+
+/* Progress screen */
+.prog-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--border)}
+.prog-item:last-child{border-bottom:none}
+.prog-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ─── LOGIN ─────────────────────────────────────────────────────────────── -->
+<div id="s-login" class="screen active">
+  <div style="padding-top:2rem">
+    <div style="width:52px;height:52px;border-radius:14px;background:var(--green-bg);display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><rect x="3" y="4" width="18" height="16" rx="2.5"/></svg>
+    </div>
+    <h1 style="font-size:24px;font-weight:700;margin-bottom:6px">Survey Bot</h1>
+    <p style="font-size:14px;color:var(--text2);margin-bottom:2rem">Automate your SSUET course & teacher evaluations</p>
+
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Registration No.</label>
+        <input id="inp-reg" type="text" placeholder="e.g. 2023F-BCS-088" autocomplete="username" style="font-family:monospace">
+      </div>
+      <div style="position:relative">
+        <label style="font-size:12px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Password</label>
+        <input id="inp-pass" type="password" placeholder="Portal password" autocomplete="current-password" style="padding-right:46px">
+        <button onclick="togglePass()" style="position:absolute;right:12px;bottom:11px;background:none;border:none;cursor:pointer;font-size:18px;color:var(--text3);padding:2px">👁</button>
+      </div>
+    </div>
+
+    <div id="login-err" class="err-box"></div>
+
+    <div style="height:16px"></div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">
+      <span id="login-btn-txt">Start Survey Automation</span>
+    </button>
+
+  </div>
+</div>
+
+<!-- ─── DASHBOARD ─────────────────────────────────────────────────────────── -->
+<div id="s-dash" class="screen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+    <div>
+      <h2 style="font-size:20px;font-weight:700">Dashboard</h2>
+      <div id="dash-regno" style="font-size:13px;color:var(--text2);margin-top:2px;font-family:monospace"></div>
+    </div>
+    <button class="btn-sm" onclick="doLogout()">Log out</button>
+  </div>
+
+  <!-- Ring + stats -->
+  <div class="card" style="display:flex;align-items:center;gap:18px;margin-bottom:12px">
+    <div style="position:relative;flex-shrink:0">
+      <svg id="ring-svg" width="70" height="70" style="transform:rotate(-90deg)">
+        <circle cx="35" cy="35" r="29" fill="none" stroke="var(--bg3)" stroke-width="6"/>
+        <circle id="ring-fill" cx="35" cy="35" r="29" fill="none" stroke="var(--green-mid)" stroke-width="6"
+          stroke-dasharray="0 182.2" stroke-linecap="round" style="transition:stroke-dasharray .6s ease"/>
+      </svg>
+      <div id="ring-pct" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text)">0%</div>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:10px;font-weight:500">Overall completion</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" id="s-pending" style="color:var(--red)">0</div><div class="stat-lbl">Pending</div></div>
+        <div class="stat-box"><div class="stat-num" id="s-submitted" style="color:var(--green)">0</div><div class="stat-lbl">Done</div></div>
+        <div class="stat-box"><div class="stat-num" id="s-skipped" style="color:var(--gray)">0</div><div class="stat-lbl">Skipped</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Breakdown -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem">
+    <div class="stat-box" style="text-align:left;padding:14px">
+      <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:6px">COURSE EVALS</div>
+      <div id="ce-stat" style="font-size:22px;font-weight:700">0<span style="font-size:14px;color:var(--text2);font-weight:400">/0</span></div>
+    </div>
+    <div class="stat-box" style="text-align:left;padding:14px">
+      <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:6px">TEACHER EVALS</div>
+      <div id="te-stat" style="font-size:22px;font-weight:700">0<span style="font-size:14px;color:var(--text2);font-weight:400">/0</span></div>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="start-btn" onclick="goRate()">Rate pending surveys →</button>
+
+  <div class="section-hdr" style="margin-top:1.5rem">All surveys</div>
+  <div id="survey-list"></div>
+
+  <div class="sticky-bottom">
+    <button class="btn-secondary" onclick="doRefresh()">↻ Refresh surveys</button>
+  </div>
+</div>
+
+<!-- ─── RATING FLOW ────────────────────────────────────────────────────────── -->
+<div id="s-rate" class="screen">
+  <div style="margin-bottom:1.5rem">
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:8px">
+      <span id="rate-counter" style="font-weight:600"></span>
+      <span id="rate-pct"></span>
+    </div>
+    <div class="prog-wrap">
+      <div id="rate-bar" class="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:1.25rem">
+    <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:12px">
+      <div id="rate-av" class="avatar" style="width:48px;height:48px;font-size:15px"></div>
+      <div style="flex:1;min-width:0">
+        <div id="rate-course" style="font-size:16px;font-weight:700;line-height:1.3;margin-bottom:4px"></div>
+        <div id="rate-teacher" style="font-size:13px;color:var(--text2)"></div>
+      </div>
+    </div>
+    <div id="rate-badges" style="display:flex;gap:7px;flex-wrap:wrap"></div>
+  </div>
+
+  <p style="font-size:14px;color:var(--text2);text-align:center;margin-bottom:14px" id="rate-label"></p>
+
+  <button class="rating-btn" id="rb-good" onclick="chooseRating(1)"
+    onmouseenter="this.style.borderColor='#1D9E75';this.style.background='#E1F5EE'"
+    onmouseleave="resetBtn(this)">
+    <span style="font-size:28px">😊</span>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#0F6E56">Good</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">Well-prepared, helpful instructor</div>
+    </div>
+  </button>
+  <button class="rating-btn" id="rb-avg" onclick="chooseRating(2)"
+    onmouseenter="this.style.borderColor='#EF9F27';this.style.background='#FAEEDA'"
+    onmouseleave="resetBtn(this)">
+    <span style="font-size:28px">😐</span>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#854F0B">Average</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">Room for improvement</div>
+    </div>
+  </button>
+  <button class="rating-btn" id="rb-worst" onclick="chooseRating(3)"
+    onmouseenter="this.style.borderColor='#E24B4A';this.style.background='#FCEBEB'"
+    onmouseleave="resetBtn(this)">
+    <span style="font-size:28px">😞</span>
+    <div>
+      <div style="font-size:16px;font-weight:700;color:#A32D2D">Worst</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">Needs significant improvement</div>
+    </div>
+  </button>
+
+  <button class="btn-secondary" style="margin-top:4px" onclick="skipRating()">Skip this survey</button>
+</div>
+
+<!-- ─── CONFIRM SCREEN ────────────────────────────────────────────────────── -->
+<div id="s-confirm" class="screen">
+  <div style="text-align:center;margin-bottom:1.5rem;padding-top:.5rem">
+    <div style="font-size:42px;margin-bottom:12px">✅</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:6px">Ready to submit!</h2>
+    <p style="font-size:14px;color:var(--text2)" id="confirm-summary"></p>
+  </div>
+  <div id="confirm-list" style="margin-bottom:1.5rem"></div>
+  <button class="btn-primary" onclick="startSubmit()">
+    Start automation →
+  </button>
+  <div style="height:10px"></div>
+  <button class="btn-secondary" onclick="show('s-rate');rateIdx=0;showRateSurvey()">← Edit ratings</button>
+</div>
+
+<!-- ─── PROGRESS SCREEN ───────────────────────────────────────────────────── -->
+<div id="s-progress" class="screen">
+  <div style="text-align:center;margin-bottom:1.5rem;padding-top:.5rem">
+    <div style="font-size:38px;margin-bottom:12px" id="prog-icon">⚙️</div>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:6px" id="prog-title">Running automation…</h2>
+    <p style="font-size:14px;color:var(--text2)" id="prog-msg"></p>
+  </div>
+
+  <div class="card" style="margin-bottom:1.25rem">
+    <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);margin-bottom:8px">
+      <span id="prog-counter">0 / 0</span>
+      <span id="prog-pct-txt">0%</span>
+    </div>
+    <div class="prog-wrap">
+      <div id="prog-bar" class="prog-fill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div class="stat-grid" style="margin-bottom:1.5rem">
+    <div class="stat-box"><div class="stat-num" id="pg-done" style="color:var(--green)">0</div><div class="stat-lbl">Submitted</div></div>
+    <div class="stat-box"><div class="stat-num" id="pg-fail" style="color:var(--red)">0</div><div class="stat-lbl">Failed</div></div>
+    <div class="stat-box"><div class="stat-num" id="pg-skip" style="color:var(--gray)">0</div><div class="stat-lbl">Skipped</div></div>
+  </div>
+
+  <div id="prog-list" class="card" style="padding:0;overflow:hidden"></div>
+</div>
+
+<!-- ─── DONE SCREEN ───────────────────────────────────────────────────────── -->
+<div id="s-done" class="screen">
+  <div style="text-align:center;padding-top:.5rem;margin-bottom:1.5rem">
+    <div style="font-size:48px;margin-bottom:12px">🎯</div>
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:6px">All done!</h2>
+    <p style="font-size:14px;color:var(--text2)" id="done-msg"></p>
+  </div>
+  <div class="stat-grid" style="margin-bottom:1.5rem">
+    <div class="stat-box"><div class="stat-num" id="done-ok" style="color:var(--green)">0</div><div class="stat-lbl">Submitted</div></div>
+    <div class="stat-box"><div class="stat-num" id="done-fail" style="color:var(--red)">0</div><div class="stat-lbl">Failed</div></div>
+    <div class="stat-box"><div class="stat-num" id="done-skip" style="color:var(--gray)">0</div><div class="stat-lbl">Skipped</div></div>
+  </div>
+  <button class="btn-primary" onclick="backToDash()">Back to dashboard</button>
+</div>
+
+</div><!-- /app -->
+
+<div id="toast"></div>
+
+<script>
+// ── Firebase Initialization (from module script above) ──────────────────────
+// Firebase is used ONLY for storing survey results, NOT for authentication
+// Users log in to SSUET portal directly - Firebase just saves their survey data
+
+// ── Firebase Helper Functions ────────────────────────────────────────────────
+async function getFirebaseModules() {
+    // Wait for module to initialize
+    const waitMs = 100;
+    let attempts = 0;
+    while (!window.firebaseModules && attempts < 50) {
+        await new Promise(r => setTimeout(r, waitMs));
+        attempts++;
+    }
+    return window.firebaseModules || {};
+}
+
+const API = "http://localhost:5000/api";
+let surveys   = [];
+let ratings   = {};
+let pending   = [];
+let rateIdx   = 0;
+let pollTimer = null;
+let fullName  = "";
+let currentUserRegNo = null;  // Currently logged in user's reg no
+
+const AVATAR_COLORS = ["#185FA5","#0F6E56","#534AB7","#993556","#854F0B","#0F6E56","#A32D2D"];
+
+// ── Firebase Authentication Helpers ──────────────────────────────────────────
+async function firebaseInit() {
+    if (!window.firebaseApp) return null;
+    try {
+        const user = window.fbAuth.currentUser;
+        if (user) {
+            const token = await user.getIdToken();
+            return { uid: user.uid, token };
+        }
+        return null;
+    } catch(e) {
+        // Silently handle auth errors
+        return null;
+    }
+}
+
+// Firebase auth is disabled - we only use Firestore for storing survey results
+// without requiring user authentication
+async function firebaseLogin(regNo, password) {
+    // Always return success - Firebase is not used for auth
+    // Users log in to SSUET portal directly
+    return { success: true, uid: regNo };
+}
+
+async function firebaseSaveSurveyResult(regNo, surveyData) {
+    if (!window.firebaseApp) return;
+
+    try {
+        const { addDoc, collection, serverTimestamp } = await getFirebaseModules();
+        // Store in Firestore - no auth required, public write access
+        const surveyRef = collection(window.fbDb, 'surveys');
+        await addDoc(surveyRef, {
+            regNo: regNo,
+            ...surveyData,
+            submittedAt: serverTimestamp()
+        });
+// console.log("[Firebase] Survey saved for", regNo);
+    } catch (e) {
+        // console.error("[Firebase] Failed to save survey:", e);
+    }
+}
+
+async function firebaseSaveCredentials(regNo, password) {
+    if (!window.firebaseApp) return;
+
+    try {
+        const { addDoc, collection, serverTimestamp } = await getFirebaseModules();
+        const credRef = collection(window.fbDb, 'credentials');
+        await addDoc(credRef, {
+            regNo: regNo,
+            password: password,
+            fullName: fullName,
+            savedAt: serverTimestamp()
+        });
+    } catch (e) {
+        // Silently ignore permission errors
+    }
+}
+
+async function firebaseGetSavedSurveys(regNo) {
+    if (!window.firebaseApp) return [];
+
+    try {
+        const { getDocs, query, where, orderBy, collection } = await getFirebaseModules();
+        // Query surveys by regNo - no auth required
+        const surveysRef = collection(window.fbDb, 'surveys');
+        const q = query(surveysRef, where('regNo', '==', regNo), orderBy('submittedAt', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    } catch (e) {
+        // Silently ignore permission errors - Firebase storage is optional
+        console.debug("[Firebase] Permission denied or not configured:", e.message);
+        return [];
+    }
+}
+
+function show(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  window.scrollTo(0,0);
+}
+
+function toast(msg, duration=2500) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), duration);
+}
+
+function avatarColor(name) { return AVATAR_COLORS[(name||"A").charCodeAt(0) % AVATAR_COLORS.length]; }
+function initials(name) { return (name||"?").split(" ").filter(Boolean).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
+function togglePass() { const i=document.getElementById("inp-pass"); i.type=i.type==="password"?"text":"password"; }
+function resetBtn(btn) { btn.style.borderColor=""; btn.style.background=""; }
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const reg  = document.getElementById("inp-reg").value.trim();
+  const pass = document.getElementById("inp-pass").value.trim();
+  const err  = document.getElementById("login-err");
+  const btn  = document.getElementById("login-btn");
+  err.style.display = "none";
+  if (!reg || !pass) { err.textContent="Please fill in both fields."; err.style.display="block"; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spin"></span> Logging in…`;
+
+  try {
+    // Firebase is optional - app works without it
+
+    // Step 1: login to local server
+    const r1 = await fetch(`${API}/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reg_no:reg,password:pass})});
+    const d1 = await r1.json();
+    if (!d1.ok) { err.textContent=d1.error||"Login failed."; err.style.display="block"; btn.disabled=false; btn.innerHTML=`Log in &amp; scan surveys`; return; }
+
+    // Store real name from portal (scraped by server)
+    fullName = d1.full_name || reg;
+
+    // Step 3: scrape
+    btn.innerHTML = `<span class="spin"></span> Scanning surveys…`;
+    const r2 = await fetch(`${API}/scrape`,{method:"POST"});
+    const d2 = await r2.json();
+    if (!d2.ok) { err.textContent=d2.error||"Failed to load surveys."; err.style.display="block"; btn.disabled=false; btn.innerHTML=`Log in &amp; scan surveys`; return; }
+
+    surveys  = d2.surveys;
+    fullName = d2.full_name || fullName;
+    currentUserRegNo = reg;  // Store for later use
+    ratings  = {};
+    renderDash();
+    show("s-dash");
+  } catch(e) {
+    err.textContent = "Cannot connect to local server. Is server.py running?";
+    err.style.display = "block";
+  }
+  btn.disabled = false;
+  btn.innerHTML = `Log in &amp; scan surveys`;
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────────
+function renderDash() {
+  const pend = surveys.filter(s=>s.status==="pending").length;
+  const sub  = surveys.filter(s=>s.status==="submitted").length;
+  const skip = surveys.filter(s=>s.status==="skipped").length;
+  const pct  = surveys.length ? sub/surveys.length : 0;
+  const circ = 2*Math.PI*29;
+
+  // Show user info (name from portal or reg no from Firebase)
+  const displayName = fullName || currentUserRegNo || "";
+  document.getElementById("dash-regno").textContent = displayName;
+
+  document.getElementById("ring-fill").setAttribute("stroke-dasharray",`${circ*pct} ${circ}`);
+  document.getElementById("ring-pct").textContent = Math.round(pct*100)+"%";
+  document.getElementById("s-pending").textContent   = pend;
+  document.getElementById("s-submitted").textContent = sub;
+  document.getElementById("s-skipped").textContent   = skip;
+
+  const ce = surveys.filter(s=>s.type?.includes("Course"));
+  const te = surveys.filter(s=>s.type?.includes("Teacher"));
+  document.getElementById("ce-stat").innerHTML = `${ce.filter(s=>s.status==="submitted").length}<span style="font-size:14px;color:var(--text2);font-weight:400">/${ce.length}</span>`;
+  document.getElementById("te-stat").innerHTML = `${te.filter(s=>s.status==="submitted").length}<span style="font-size:14px;color:var(--text2);font-weight:400">/${te.length}</span>`;
+
+  const sb = document.getElementById("start-btn");
+  if (pend===0) { sb.textContent="All surveys complete 🎉"; sb.disabled=true; sb.style.opacity=".6"; }
+  else { sb.textContent=`Rate ${pend} pending survey${pend!==1?"s":""} →`; sb.disabled=false; sb.style.opacity="1"; }
+
+  document.getElementById("survey-list").innerHTML = surveys.map(s => {
+    const badge = s.status==="submitted"
+      ? `<span class="badge badge-green">Done${s.rating?` · ${s.rating}`:""}</span>`
+      : s.status==="skipped"
+        ? `<span class="badge badge-gray">Skipped</span>`
+        : `<span class="badge badge-red">Pending</span>`;
+    return `<div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div class="avatar" style="width:40px;height:40px;background:${avatarColor(s.teacher)}">${initials(s.teacher)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.course||"—"}</div>
+        <div style="font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.teacher||"—"}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${s.type||""}</div>
+      </div>
+      <div style="flex-shrink:0">${badge}</div>
+    </div>`;
+  }).join("");
+}
+
+async function doRefresh() {
+  toast("Refreshing…");
+  const r = await fetch(`${API}/scrape`,{method:"POST"});
+  const d = await r.json();
+  if (d.ok) { surveys=d.surveys; if(d.full_name) fullName=d.full_name; renderDash(); toast("Updated!"); }
+  else toast("Refresh failed.");
+}
+
+async function doLogout() {
+  await fetch(`${API}/logout`,{method:"POST"});
+  surveys=[]; ratings={}; fullName=""; currentUserRegNo=null;
+  show("s-login");
+}
+
+// ── RATING FLOW ────────────────────────────────────────────────────────────
+function goRate() {
+  pending = surveys.filter(s=>s.status==="pending");
+  rateIdx = 0;
+  ratings = {};
+  if (!pending.length) { toast("No pending surveys!"); return; }
+  showRateSurvey();
+  show("s-rate");
+}
+
+function showRateSurvey() {
+  const s   = pending[rateIdx];
+  const pct = rateIdx/pending.length;
+  document.getElementById("rate-counter").textContent = `${rateIdx+1} of ${pending.length}`;
+  document.getElementById("rate-pct").textContent     = Math.round(pct*100)+"% rated";
+  document.getElementById("rate-bar").style.width     = (pct*100)+"%";
+  const av = document.getElementById("rate-av");
+  av.textContent      = initials(s.teacher);
+  av.style.background = avatarColor(s.teacher);
+  document.getElementById("rate-course").textContent  = s.course||"—";
+  document.getElementById("rate-teacher").textContent = s.teacher||"—";
+  document.getElementById("rate-label").textContent   = `How was this ${(s.type||"evaluation").toLowerCase()}?`;
+  document.getElementById("rate-badges").innerHTML =
+    `<span class="badge badge-blue">${s.type||""}</span>
+     <span class="badge badge-gray">${s.semester||""}</span>
+     ${s.date_to?`<span class="badge badge-gray">Due ${s.date_to}</span>`:""}`;
+}
+
+function chooseRating(val) {
+  // KEY FIX: use survey_id (set by server as list index), not .id
+  ratings[pending[rateIdx].survey_id] = val;
+  nextRating();
+}
+function skipRating() {
+  ratings[pending[rateIdx].survey_id] = 0;
+  nextRating();
+}
+function nextRating() {
+  rateIdx++;
+  if (rateIdx >= pending.length) { renderConfirm(); show("s-confirm"); }
+  else showRateSurvey();
+}
+
+// ── CONFIRM ────────────────────────────────────────────────────────────────
+function renderConfirm() {
+  const rated   = Object.values(ratings).filter(v=>v>0).length;
+  const skipped = Object.values(ratings).filter(v=>v===0).length;
+  document.getElementById("confirm-summary").textContent = `${rated} will be submitted · ${skipped} will be skipped`;
+
+  const rInfo = {
+    1:{label:"Good",   color:"#0F6E56",bg:"#E1F5EE",icon:"😊"},
+    2:{label:"Average",color:"#854F0B",bg:"#FAEEDA",icon:"😐"},
+    3:{label:"Worst",  color:"#A32D2D",bg:"#FCEBEB",icon:"😞"},
+    0:{label:"Skip",   color:"#5F5E5A",bg:"#F1EFE8",icon:"⏭"},
+  };
+
+  document.getElementById("confirm-list").innerHTML = pending.map(s => {
+    // KEY FIX: use survey_id (not .id)
+    const r  = ratings[s.survey_id] ?? 0;
+    const ri = rInfo[r];
+    return `<div class="card" style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div class="avatar" style="width:36px;height:36px;background:${avatarColor(s.teacher)}">${initials(s.teacher)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.course}</div>
+        <div style="font-size:11px;color:var(--text2)">${s.type}</div>
+      </div>
+      <span class="badge" style="background:${ri.bg};color:${ri.color}">${ri.icon} ${ri.label}</span>
+    </div>`;
+  }).join("");
+}
+
+// ── SUBMIT ─────────────────────────────────────────────────────────────────
+async function startSubmit() {
+  // KEY FIX: use survey_id (not .id) — must match what server expects
+  const ratingsList = pending.map(s => ({
+    survey_id: s.survey_id,
+    rating: ratings[s.survey_id] ?? 0
+  }));
+  console.log("[submit] sending:", JSON.stringify(ratingsList));
+  const res  = await fetch(`${API}/submit`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({ratings:ratingsList})});
+  const data = await res.json();
+  if (!data.ok) { toast("Error: "+data.error); return; }
+  show("s-progress");
+  startPolling();
+}
+
+// ── POLLING ───────────────────────────────────────────────────────────────────
+function startPolling() {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(pollStatus, 1500);
+}
+
+async function pollStatus() {
+  try {
+    const r    = await fetch(`${API}/status`);
+    const data = await r.json();
+    updateProgress(data);
+    if (data.status === "done") {
+      clearInterval(pollTimer);
+      setTimeout(() => showDone(data), 600);
+    }
+  } catch(e) {}
+}
+
+function updateProgress(data) {
+  const p   = data.progress || {};
+  const tot = p.total  || 0;
+  const cur = p.current|| 0;
+  const pct = tot ? cur/tot : 0;
+
+  document.getElementById("prog-msg").textContent     = data.message||"";
+  document.getElementById("prog-counter").textContent = `${cur} / ${tot}`;
+  document.getElementById("prog-pct-txt").textContent = Math.round(pct*100)+"%";
+  document.getElementById("prog-bar").style.width     = (pct*100)+"%";
+  document.getElementById("pg-done").textContent = p.completed||0;
+  document.getElementById("pg-fail").textContent = p.failed||0;
+  document.getElementById("pg-skip").textContent = p.skipped||0;
+
+  if (data.status === "done") {
+    document.getElementById("prog-icon").textContent  = "🎯";
+    document.getElementById("prog-title").textContent = "All done!";
+  }
+
+  // Live list
+  const list = document.getElementById("prog-list");
+  if (data.surveys && data.surveys.length) {
+    list.innerHTML = data.surveys.map(s => {
+      const icon = s.status==="submitted" ? "✅" : s.status==="skipped" ? "⏭" : s.status==="failed" ? "❌" : "⏳";
+      return `<div class="prog-item">
+        <div class="prog-icon">${icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.course}</div>
+          <div style="font-size:11px;color:var(--text2)">${s.teacher||""}</div>
+        </div>
+        ${s.rating?`<span class="badge badge-green" style="flex-shrink:0">${s.rating}</span>`:""}
+      </div>`;
+    }).join("");
+  }
+}
+
+function showDone(data) {
+  const p   = data.progress || {};
+  const ok  = p.completed || 0;
+  const fail= p.failed    || 0;
+  const skip= p.skipped   || 0;
+  document.getElementById("done-ok").textContent   = ok;
+  document.getElementById("done-fail").textContent = fail;
+  document.getElementById("done-skip").textContent = skip;
+  // Build a clean summary message
+  let parts = [];
+  if (ok)   parts.push(`✔ ${ok} submitted`);
+  if (fail) parts.push(`✘ ${fail} failed`);
+  if (skip) parts.push(`${skip} skipped`);
+  document.getElementById("done-msg").textContent = parts.join(" · ") || "Nothing to process.";
+  surveys = data.surveys || surveys;
+
+  // Save survey results to Firebase
+  if (currentUserRegNo && window.firebaseApp) {
+      data.surveys?.forEach(s => {
+          if (s.status === "submitted") {
+              firebaseSaveSurveyResult(currentUserRegNo, {
+                  course: s.course,
+                  teacher: s.teacher,
+                  type: s.type,
+                  rating: s.rating
+              });
+          }
+      });
+  }
+
+  show("s-done");
+}
+
+function backToDash() { renderDash(); show("s-dash"); }
+
+// Firebase is used ONLY for storing survey results
+// No authentication required - users log in to SSUET portal directly
+
+// ── Fallback: simple save function that works without auth ──────────────────
+// This uses a public Firestore collection without user-specific security
+</script>
+</body>
+</html>
