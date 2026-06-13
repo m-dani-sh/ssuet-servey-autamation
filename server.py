@@ -59,22 +59,10 @@ if FIREBASE_ENABLED:
         traceback.print_exc()
         fb_db = None
 
-# app = Flask(__name__, static_folder=".")
-# CORS(app)
-
 app = Flask(__name__, static_folder=".")
+CORS(app)
 
-# Explicitly allow your frontend Render URL and localhost for testing
-CORS(app, resources={
-    r"/api/*": {
-        "origins": [
-            "https://ssuet-servey-autamation.onrender.com", 
-            "http://localhost:5000"
-        ],
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
-    }
-})
+
 
 LOGIN_URL       = "https://edusmartz.ssuet.edu.pk/StudentPortal/Login"
 SURVEY_LIST_URL = "https://edusmartz.ssuet.edu.pk/StudentPortal/Survey/1"
