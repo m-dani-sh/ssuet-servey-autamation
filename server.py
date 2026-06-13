@@ -94,20 +94,36 @@ def get_driver():
     except:
         _driver = None
         return create_driver()
-
+    
 def create_driver():
     global _driver
     opts = Options()
+    opts.add_argument("--headless") # Headless mode is REQUIRED for cloud environments
     opts.add_argument("--no-sandbox")
     opts.add_argument("--disable-dev-shm-usage")
+    opts.add_argument("--disable-gpu")
     opts.add_argument("--disable-blink-features=AutomationControlled")
-    opts.add_experimental_option("excludeSwitches", ["enable-automation"])
-    opts.add_experimental_option("useAutomationExtension", False)
+    
+    # Point Selenium directly to the Render Chrome installation path
+    if os.path.exists("/opt/render/project/.render/chrome/opt/google/chrome/chrome"):
+        opts.binary_location = "/opt/render/project/.render/chrome/opt/google/chrome/chrome"
+
     _driver = webdriver.Chrome(options=opts)
-    _driver.execute_script(
-        "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"
-    )
     return _driver
+
+# def create_driver():
+#     global _driver
+#     opts = Options()
+#     opts.add_argument("--no-sandbox")
+#     opts.add_argument("--disable-dev-shm-usage")
+#     opts.add_argument("--disable-blink-features=AutomationControlled")
+#     opts.add_experimental_option("excludeSwitches", ["enable-automation"])
+#     opts.add_experimental_option("useAutomationExtension", False)
+#     _driver = webdriver.Chrome(options=opts)
+#     _driver.execute_script(
+#         "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"
+#     )
+#     return _driver
 
 def quit_driver():
     global _driver
