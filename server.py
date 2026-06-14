@@ -24,40 +24,93 @@ import os
 FIREBASE_ENABLED = False
 fb_db = None
 
-try:
-    import firebase_admin
-    from firebase_admin import credentials, firestore
-    FIREBASE_ENABLED = True
-except ImportError:
-    print("[Firebase] firebase-admin not installed, survey storage disabled")
-    print("  Install with: pip install firebase-admin")
+import os
+import json
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-# Try to initialize Firebase with service account
+FIREBASE_ENABLED = True
+fb_db = None
+
 if FIREBASE_ENABLED:
     try:
-        service_account_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "service-account.json")
-        print(f"[Firebase] Looking for service account at: {service_account_path}")
-        if os.path.exists(service_account_path):
-            print(f"[Firebase] Service account file found")
-            cred = credentials.Certificate(service_account_path)
-            print(f"[Firebase] Loading credentials...")
+        firebase_creds_env = os.environ.get("FIREBASE_CREDENTIALS")
+        
+        if firebase_creds_env:
+            print("[Firebase] Found FIREBASE_CREDENTIALS string. Parsing...")
+            
+            # Load the raw string directly into a dictionary
+            cred_dict = json.loads(firebase_creds_env)
+            
+            # Critical: Ensure newline breaks inside the private key string are preserved properly
+            if "private_key" in cred_dict:
+                cred_dict["private_key"] = cred_dict["private_key"].replace("\\n", "\n")
+                
+            cred = credentials.Certificate(cred_dict)
+            
             try:
                 firebase_admin.initialize_app(cred)
             except ValueError as e:
                 if "already exists" in str(e):
-                    print("[Firebase] App already initialized, reusing")
+                    print("[Firebase] App already active, reusing instance.")
                 else:
                     raise
+                    
             fb_db = firestore.client()
-            print("[Firebase] Connected to Firestore")
+            print("[Firebase] Connected to Firestore successfully via Render Environment!")
+            
         else:
-            print(f"[Firebase] service-account.json NOT found at: {service_account_path}")
-            print("  Download from Firebase Console > Project Settings > Service Accounts")
+            # Local machine file system execution fallback
+            service_account_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "service-account.json")
+            if os.path.exists(service_account_path):
+                cred = credentials.Certificate(service_account_path)
+                firebase_admin.initialize_app(cred)
+                fb_db = firestore.client()
+                print("[Firebase] Connected to Firestore locally via service-account.json")
+            else:
+                print("[Firebase] WARNING: No credential target could be resolved.")
+                fb_db = None
+                
     except Exception as e:
-        print(f"[Firebase] Init failed: {e}")
-        import traceback
-        traceback.print_exc()
+        print(f"[Firebase] Initialization Failed: {e}")
         fb_db = None
+
+
+
+# try:
+#     import firebase_admin
+#     from firebase_admin import credentials, firestore
+#     FIREBASE_ENABLED = True
+# except ImportError:
+#     print("[Firebase] firebase-admin not installed, survey storage disabled")
+#     print("  Install with: pip install firebase-admin")
+
+# # Try to initialize Firebase with service account
+# if FIREBASE_ENABLED:
+#     try:
+#         service_account_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "service-account.json")
+#         print(f"[Firebase] Looking for service account at: {service_account_path}")
+#         if os.path.exists(service_account_path):
+#             print(f"[Firebase] Service account file found")
+#             cred = credentials.Certificate(service_account_path)
+#             print(f"[Firebase] Loading credentials...")
+#             try:
+#                 firebase_admin.initialize_app(cred)
+#             except ValueError as e:
+#                 if "already exists" in str(e):
+#                     print("[Firebase] App already initialized, reusing")
+#                 else:
+#                     raise
+#             fb_db = firestore.client()
+#             print("[Firebase] Connected to Firestore")
+#         else:
+#             print(f"[Firebase] service-account.json NOT found at: {service_account_path}")
+#             print("  Download from Firebase Console > Project Settings > Service Accounts")
+#     except Exception as e:
+#         print(f"[Firebase] Init failed: {e}")
+#         import traceback
+#         traceback.print_exc()
+#         fb_db = None
 
 app = Flask(__name__, static_folder=".")
 CORS(app)
